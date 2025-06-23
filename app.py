@@ -1,0 +1,501 @@
+from flask import Flask, render_template_string, request, send_file, jsonify, redirect, url_for
+import os
+import fitz  # PyMuPDF
+from PIL import Image
+import io
+import zipfile
+from werkzeug.utils import secure_filename
+import tempfile
+import shutil
+from docx import Document
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import openpyxl
+
+app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['OUTPUT_FOLDER'] = 'outputs'
+
+# Criar diretórios se não existirem
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt', 'xlsx', 'jpg', 'jpeg', 'png'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Template HTML
+HTML_TEMPLATE = '''
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalPDF.io Local</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
+        .header h1 { font-size: 3em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .tool-card { background: white; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s ease; cursor: pointer; }
+        .tool-card:hover { transform: translateY(-5px); }
+        .tool-card h3 { color: #333; margin-bottom: 15px; font-size: 1.5em; }
+        .tool-card p { color: #666; margin-bottom: 20px; }
+        .upload-area { border: 2px dashed #ddd; border-radius: 10px; padding: 40px; text-align: center; background: #f9f9f9; margin: 20px 0; transition: all 0.3s ease; }
+        .upload-area:hover { border-color: #667eea; background: #f0f4ff; }
+        .upload-area.dragover { border-color: #667eea; background: #e8f0ff; }
+        .file-input { display: none; }
+        .upload-btn { background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 25px; cursor: pointer; font-size: 1.1em; transition: background 0.3s ease; }
+        .upload-btn:hover { background: #5a6fd8; }
+        .convert-btn { background: #28a745; color: white; padding: 15px 40px; border: none; border-radius: 25px; cursor: pointer; font-size: 1.2em; margin-top: 20px; transition: background 0.3s ease; }
+        .convert-btn:hover { background: #1e7e34; }
+        .convert-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .file-list { margin-top: 20px; }
+        .file-item { background: #f8f9fa; padding: 10px 15px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .progress { width: 100%; background: #f0f0f0; border-radius: 10px; margin: 20px 0; }
+        .progress-bar { height: 20px; background: #667eea; border-radius: 10px; width: 0%; transition: width 0.3s ease; }
+        .result { margin-top: 20px; padding: 20px; background: #d4edda; border-radius: 10px; color: #155724; }
+        .error { margin-top: 20px; padding: 20px; background: #f8d7da; border-radius: 10px; color: #721c24; }
+        .hidden { display: none; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; width: 80%; max-width: 600px; border-radius: 15px; position: relative; }
+        .close { position: absolute; right: 20px; top: 15px; font-size: 30px; cursor: pointer; color: #aaa; }
+        .close:hover { color: #000; }
+        .back-btn { background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer; margin-bottom: 20px; }
+        .back-btn:hover { background: #545b62; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 LocalPDF.io Local</h1>
+            <p>Todas as ferramentas PDF que você precisa em um só lugar</p>
+        </div>
+
+        <div id="home-view">
+            <div class="tools-grid">
+                <div class="tool-card" onclick="showTool('pdf-to-images')">
+                    <h3>🖼️ PDF para Imagens</h3>
+                    <p>Converta páginas PDF em imagens JPG ou PNG</p>
+                </div>
+                <div class="tool-card" onclick="showTool('images-to-pdf')">
+                    <h3>📄 Imagens para PDF</h3>
+                    <p>Combine várias imagens em um único PDF</p>
+                </div>
+                <div class="tool-card" onclick="showTool('merge-pdf')">
+                    <h3>🔗 Mesclar PDFs</h3>
+                    <p>Combine vários PDFs em um documento único</p>
+                </div>
+                <div class="tool-card" onclick="showTool('split-pdf')">
+                    <h3>✂️ Dividir PDF</h3>
+                    <p>Extraia páginas específicas do seu PDF</p>
+                </div>
+                <div class="tool-card" onclick="showTool('compress-pdf')">
+                    <h3>📦 Comprimir PDF</h3>
+                    <p>Reduza o tamanho do seu arquivo PDF</p>
+                </div>
+                <div class="tool-card" onclick="showTool('word-to-pdf')">
+                    <h3>📝 Word para PDF</h3>
+                    <p>Converta documentos DOCX para PDF</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Views -->
+        <div id="tool-views" class="hidden">
+            <button class="back-btn" onclick="showHome()">← Voltar</button>
+            <div class="tool-card">
+                <h3 id="tool-title"></h3>
+                <p id="tool-description"></p>
+                
+                <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" class="file-input" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,.txt,.xlsx">
+                    <p>📁 Clique aqui ou arraste arquivos para fazer upload</p>
+                    <button class="upload-btn">Escolher Arquivos</button>
+                </div>
+
+                <div id="file-list" class="file-list"></div>
+                
+                <div id="options" class="hidden">
+                    <!-- Opções específicas para cada ferramenta -->
+                </div>
+
+                <button id="convert-btn" class="convert-btn hidden" onclick="convertFiles()">Converter</button>
+                
+                <div id="progress" class="progress hidden">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                
+                <div id="result" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTool = '';
+        let uploadedFiles = [];
+
+        const tools = {
+            'pdf-to-images': {
+                title: '🖼️ PDF para Imagens',
+                description: 'Converta cada página do seu PDF em imagens separadas',
+                accept: '.pdf',
+                multiple: false
+            },
+            'images-to-pdf': {
+                title: '📄 Imagens para PDF',
+                description: 'Combine múltiplas imagens em um único arquivo PDF',
+                accept: '.jpg,.jpeg,.png',
+                multiple: true
+            },
+            'merge-pdf': {
+                title: '🔗 Mesclar PDFs',
+                description: 'Combine vários arquivos PDF em um documento único',
+                accept: '.pdf',
+                multiple: true
+            },
+            'split-pdf': {
+                title: '✂️ Dividir PDF',
+                description: 'Extraia páginas específicas do seu PDF',
+                accept: '.pdf',
+                multiple: false
+            },
+            'compress-pdf': {
+                title: '📦 Comprimir PDF',
+                description: 'Reduza o tamanho do arquivo PDF mantendo a qualidade',
+                accept: '.pdf',
+                multiple: false
+            },
+            'word-to-pdf': {
+                title: '📝 Word para PDF',
+                description: 'Converta documentos Word (.docx) para PDF',
+                accept: '.docx',
+                multiple: false
+            }
+        };
+
+        function showTool(toolName) {
+            currentTool = toolName;
+            const tool = tools[toolName];
+            
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('tool-views').classList.remove('hidden');
+            document.getElementById('tool-title').innerText = tool.title;
+            document.getElementById('tool-description').innerText = tool.description;
+            document.getElementById('file-input').accept = tool.accept;
+            document.getElementById('file-input').multiple = tool.multiple;
+            
+            uploadedFiles = [];
+            updateFileList();
+            hideResult();
+        }
+
+        function showHome() {
+            document.getElementById('home-view').classList.remove('hidden');
+            document.getElementById('tool-views').classList.add('hidden');
+            uploadedFiles = [];
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('file-list');
+            const convertBtn = document.getElementById('convert-btn');
+            
+            if (uploadedFiles.length === 0) {
+                fileList.innerHTML = '';
+                convertBtn.classList.add('hidden');
+                return;
+            }
+            
+            fileList.innerHTML = uploadedFiles.map((file, index) => `
+                <div class="file-item">
+                    <span>📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    <button onclick="removeFile(${index})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Remover</button>
+                </div>
+            `).join('');
+            
+            convertBtn.classList.remove('hidden');
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        function hideResult() {
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('progress').classList.add('hidden');
+        }
+
+        // Upload de arquivos
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (tools[currentTool].multiple) {
+                uploadedFiles = uploadedFiles.concat(files);
+            } else {
+                uploadedFiles = files.slice(0, 1);
+            }
+            updateFileList();
+        });
+
+        // Drag and drop
+        const uploadArea = document.getElementById('upload-area');
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = Array.from(e.dataTransfer.files);
+            if (tools[currentTool].multiple) {
+                uploadedFiles = uploadedFiles.concat(files);
+            } else {
+                uploadedFiles = files.slice(0, 1);
+            }
+            updateFileList();
+        });
+
+        async function convertFiles() {
+            if (uploadedFiles.length === 0) return;
+            
+            const formData = new FormData();
+            uploadedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            formData.append('tool', currentTool);
+            
+            document.getElementById('progress').classList.remove('hidden');
+            document.getElementById('convert-btn').disabled = true;
+            
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = response.headers.get('Content-Disposition')?.split('filename=')[1] || 'converted_file.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    document.getElementById('result').innerHTML = '<h4>✅ Sucesso!</h4><p>Arquivo convertido e baixado com sucesso!</p>';
+                    document.getElementById('result').classList.remove('hidden');
+                } else {
+                    throw new Error('Erro na conversão');
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h4>❌ Erro!</h4><p>Ocorreu um erro durante a conversão. Tente novamente.</p>';
+                document.getElementById('result').classList.remove('hidden');
+            } finally {
+                document.getElementById('progress').classList.add('hidden');
+                document.getElementById('convert-btn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
+'''
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/convert', methods=['POST'])
+def convert():
+    if 'files' not in request.files:
+        return jsonify({'error': 'Nenhum arquivo enviado'}), 400
+    
+    files = request.files.getlist('files')
+    tool = request.form.get('tool')
+    
+    if not files or files[0].filename == '':
+        return jsonify({'error': 'Nenhum arquivo selecionado'}), 400
+    
+    # Criar diretório temporário
+    temp_dir = tempfile.mkdtemp()
+    output_files = []
+    
+    try:
+        if tool == 'pdf-to-images':
+            output_files = pdf_to_images(files[0], temp_dir)
+        elif tool == 'images-to-pdf':
+            output_files = images_to_pdf(files, temp_dir)
+        elif tool == 'merge-pdf':
+            output_files = merge_pdfs(files, temp_dir)
+        elif tool == 'split-pdf':
+            output_files = split_pdf(files[0], temp_dir)
+        elif tool == 'compress-pdf':
+            output_files = compress_pdf(files[0], temp_dir)
+        elif tool == 'word-to-pdf':
+            output_files = word_to_pdf(files[0], temp_dir)
+        else:
+            return jsonify({'error': 'Ferramenta não suportada'}), 400
+        
+        # Se apenas um arquivo, retornar diretamente
+        if len(output_files) == 1:
+            return send_file(output_files[0], as_attachment=True)
+        
+        # Se múltiplos arquivos, criar ZIP
+        zip_path = os.path.join(temp_dir, 'converted_files.zip')
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file_path in output_files:
+                zipf.write(file_path, os.path.basename(file_path))
+        
+        return send_file(zip_path, as_attachment=True, download_name='converted_files.zip')
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        # Limpar arquivos temporários (será feito automaticamente)
+        pass
+
+def pdf_to_images(file, temp_dir):
+    pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
+    file.save(pdf_path)
+    
+    doc = fitz.open(pdf_path)
+    output_files = []
+    
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x resolution
+        img_path = os.path.join(temp_dir, f'page_{page_num + 1}.png')
+        pix.save(img_path)
+        output_files.append(img_path)
+    
+    doc.close()
+    return output_files
+
+def images_to_pdf(files, temp_dir):
+    images = []
+    for file in files:
+        img_path = os.path.join(temp_dir, secure_filename(file.filename))
+        file.save(img_path)
+        img = Image.open(img_path)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        images.append(img)
+    
+    pdf_path = os.path.join(temp_dir, 'images_to_pdf.pdf')
+    images[0].save(pdf_path, save_all=True, append_images=images[1:])
+    
+    return [pdf_path]
+
+def merge_pdfs(files, temp_dir):
+    merged_doc = fitz.open()
+    
+    for file in files:
+        pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
+        file.save(pdf_path)
+        doc = fitz.open(pdf_path)
+        merged_doc.insert_pdf(doc)
+        doc.close()
+    
+    output_path = os.path.join(temp_dir, 'merged.pdf')
+    merged_doc.save(output_path)
+    merged_doc.close()
+    
+    return [output_path]
+
+def split_pdf(file, temp_dir):
+    pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
+    file.save(pdf_path)
+    
+    doc = fitz.open(pdf_path)
+    output_files = []
+    
+    for page_num in range(len(doc)):
+        new_doc = fitz.open()
+        new_doc.insert_pdf(doc, from_page=page_num, to_page=page_num)
+        output_path = os.path.join(temp_dir, f'page_{page_num + 1}.pdf')
+        new_doc.save(output_path)
+        new_doc.close()
+        output_files.append(output_path)
+    
+    doc.close()
+    return output_files
+
+def compress_pdf(file, temp_dir):
+    pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
+    file.save(pdf_path)
+    
+    doc = fitz.open(pdf_path)
+    output_path = os.path.join(temp_dir, 'compressed.pdf')
+    doc.save(output_path, garbage=4, deflate=True, clean=True)
+    doc.close()
+    
+    return [output_path]
+
+def word_to_pdf(file, temp_dir):
+    docx_path = os.path.join(temp_dir, secure_filename(file.filename))
+    file.save(docx_path)
+    
+    # Lê o documento Word
+    doc = Document(docx_path)
+    
+    # Cria PDF usando reportlab
+    pdf_path = os.path.join(temp_dir, 'word_to_pdf.pdf')
+    c = canvas.Canvas(pdf_path, pagesize=letter)
+    width, height = letter
+    
+    y_position = height - 50
+    
+    for paragraph in doc.paragraphs:
+        if paragraph.text.strip():
+            # Quebra texto longo em múltiplas linhas
+            text = paragraph.text
+            max_width = width - 100
+            
+            # Estimativa simples de largura de texto
+            approx_char_width = 6
+            chars_per_line = int(max_width / approx_char_width)
+            
+            words = text.split()
+            lines = []
+            current_line = []
+            
+            for word in words:
+                if len(' '.join(current_line + [word])) <= chars_per_line:
+                    current_line.append(word)
+                else:
+                    if current_line:
+                        lines.append(' '.join(current_line))
+                        current_line = [word]
+                    else:
+                        lines.append(word)
+            
+            if current_line:
+                lines.append(' '.join(current_line))
+            
+            for line in lines:
+                if y_position < 50:
+                    c.showPage()
+                    y_position = height - 50
+                
+                c.drawString(50, y_position, line)
+                y_position -= 20
+    
+    c.save()
+    return [pdf_path]
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
