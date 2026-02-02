@@ -135,3 +135,8 @@ MIT License - Sinta-se livre para usar e modificar!
 ---
 
 ⭐ Se este projeto foi útil para você, considere dar uma estrela no GitHub!
+
+## :star2: Star History
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=virgiliojr94/localpdf.io&type=timeline&legend=top-left)](https://www.star-history.com/#virgiliojr94/localpdf.io&type=timeline&legend=top-left)
