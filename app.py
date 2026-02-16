@@ -44,54 +44,241 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LocalPDF.io</title>
+    <title>LocalPDF - Ferramentas PDF Corporativas</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #0066CC 0%, #00A896 100%); 
+            min-height: 100vh; 
+        }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; color: white; margin-bottom: 40px; }
-        .header h1 { font-size: 3em; margin-bottom: 10px; }
-        .header p { font-size: 1.2em; opacity: 0.9; }
-        .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px; }
-        .tool-card { background: white; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: transform 0.3s ease; cursor: pointer; }
-        .tool-card:hover { transform: translateY(-5px); }
-        .tool-card h3 { color: #333; margin-bottom: 15px; font-size: 1.5em; }
-        .tool-card p { color: #666; margin-bottom: 20px; }
-        .upload-area { border: 2px dashed #ddd; border-radius: 10px; padding: 40px; text-align: center; background: #f9f9f9; margin: 20px 0; transition: all 0.3s ease; }
-        .upload-area:hover { border-color: #667eea; background: #f0f4ff; }
-        .upload-area.dragover { border-color: #667eea; background: #e8f0ff; }
+        .header { 
+            text-align: center; 
+            color: white; 
+            margin-bottom: 40px; 
+            padding: 40px 0;
+        }
+        .header h1 { 
+            font-size: 3em; 
+            margin-bottom: 10px; 
+            font-weight: 800;
+        }
+        .header p { 
+            font-size: 1.2em; 
+            opacity: 0.95; 
+            font-weight: 400;
+        }
+        .header .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .tools-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 40px; 
+        }
+        .tool-card { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            border: 2px solid transparent;
+        }
+        .tool-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 15px 40px rgba(0,102,204,0.3);
+            border-color: #0066CC;
+        }
+        .tool-card h3 { 
+            color: #0066CC; 
+            margin-bottom: 15px; 
+            font-size: 1.4em; 
+            font-weight: 700;
+        }
+        .tool-card p { 
+            color: #64748B; 
+            margin-bottom: 20px; 
+            line-height: 1.6;
+        }
+        .upload-area { 
+            border: 2px dashed #CBD5E1; 
+            border-radius: 12px; 
+            padding: 40px; 
+            text-align: center; 
+            background: #F8FAFC; 
+            margin: 20px 0; 
+            transition: all 0.3s ease; 
+        }
+        .upload-area:hover { 
+            border-color: #0066CC; 
+            background: #F0F9FF; 
+        }
+        .upload-area.dragover { 
+            border-color: #0066CC; 
+            background: #DBEAFE; 
+            border-width: 3px;
+        }
         .file-input { display: none; }
-        .upload-btn { background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 25px; cursor: pointer; font-size: 1.1em; transition: background 0.3s ease; }
-        .upload-btn:hover { background: #5a6fd8; }
-        .convert-btn { background: #28a745; color: white; padding: 15px 40px; border: none; border-radius: 25px; cursor: pointer; font-size: 1.2em; margin-top: 20px; transition: background 0.3s ease; }
-        .convert-btn:hover { background: #1e7e34; }
-        .convert-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .upload-btn { 
+            background: #0066CC; 
+            color: white; 
+            padding: 12px 30px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1.1em; 
+            font-weight: 600;
+            transition: all 0.3s ease; 
+        }
+        .upload-btn:hover { 
+            background: #004C99; 
+            transform: translateY(-2px);
+        }
+        .convert-btn { 
+            background: #00A896; 
+            color: white; 
+            padding: 15px 40px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1.2em; 
+            font-weight: 600;
+            margin-top: 20px; 
+            transition: all 0.3s ease; 
+        }
+        .convert-btn:hover { 
+            background: #008778; 
+            transform: translateY(-2px);
+        }
+        .convert-btn:disabled { 
+            background: #CBD5E1; 
+            cursor: not-allowed; 
+            transform: none;
+        }
         .file-list { margin-top: 20px; }
-        .file-item { background: #f8f9fa; padding: 10px 15px; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .progress { width: 100%; background: #f0f0f0; border-radius: 10px; margin: 20px 0; }
-        .progress-bar { height: 20px; background: #667eea; border-radius: 10px; width: 0%; transition: width 0.3s ease; }
-        .result { margin-top: 20px; padding: 20px; background: #d4edda; border-radius: 10px; color: #155724; }
-        .error { margin-top: 20px; padding: 20px; background: #f8d7da; border-radius: 10px; color: #721c24; }
+        .file-item { 
+            background: #F1F5F9; 
+            padding: 12px 20px; 
+            margin: 8px 0; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border: 1px solid #E2E8F0;
+        }
+        .file-item span {
+            color: #334155;
+            font-weight: 500;
+        }
+        .progress { 
+            width: 100%; 
+            background: #E2E8F0; 
+            border-radius: 10px; 
+            margin: 20px 0; 
+            height: 24px;
+            overflow: hidden;
+        }
+        .progress-bar { 
+            height: 100%; 
+            background: linear-gradient(90deg, #0066CC 0%, #00A896 100%); 
+            border-radius: 10px; 
+            width: 0%; 
+            transition: width 0.3s ease; 
+        }
+        .result { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #D1FAE5; 
+            border-radius: 10px; 
+            color: #065F46; 
+            border: 2px solid #10B981;
+        }
+        .result h4 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        .error { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #FEE2E2; 
+            border-radius: 10px; 
+            color: #991B1B; 
+            border: 2px solid #EF4444;
+        }
         .hidden { display: none; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 5% auto; padding: 30px; width: 80%; max-width: 600px; border-radius: 15px; position: relative; }
-        .close { position: absolute; right: 20px; top: 15px; font-size: 30px; cursor: pointer; color: #aaa; }
-        .close:hover { color: #000; }
-        .back-btn { background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer; margin-bottom: 20px; }
-        .back-btn:hover { background: #545b62; }
-        .footer { text-align: center; color: white; margin-top: 40px; padding: 20px 0; border-top: 1px solid #ddd; }
-        .footer p { margin-bottom: 10px; }
-        .footer a { color: #667eea; text-decoration: none; }
-        .footer a:hover { text-decoration: underline; }
-        .social-icons { margin-top: 10px; }
-        .social-icons a { margin: 0 10px; color: #667eea; font-size: 1.2em; }
+        .back-btn { 
+            background: #64748B; 
+            color: white; 
+            padding: 10px 24px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin-bottom: 20px; 
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover { 
+            background: #475569; 
+        }
+        .footer { 
+            text-align: center; 
+            color: white; 
+            margin-top: 60px; 
+            padding: 30px 0; 
+            border-top: 1px solid rgba(255,255,255,0.2); 
+        }
+        .footer p { 
+            margin-bottom: 10px; 
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        .footer a { 
+            color: #FFFFFF; 
+            text-decoration: none; 
+            font-weight: 600;
+            transition: opacity 0.3s;
+        }
+        .footer a:hover { 
+            opacity: 0.8;
+            text-decoration: underline; 
+        }
+        .remove-btn {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .remove-btn:hover {
+            background: #DC2626;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .tools-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌟 LocalPDF.io</h1>
-            <p>Todas as ferramentas PDF que você precisa em um só lugar</p>
+            <div class="badge">🔒 100% Local & Seguro</div>
+            <h1>📄 LocalPDF</h1>
+            <p>Ferramentas PDF corporativas com total privacidade</p>
         </div>
 
         <div id="home-view">
@@ -148,7 +335,7 @@ HTML_TEMPLATE = """
 
                 <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
                     <input type="file" id="file-input" class="file-input" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,.txt,.xlsx">
-                    <p>📁 Clique aqui ou arraste arquivos para fazer upload</p>
+                    <p style="color: #64748B; font-size: 1.1em; margin-bottom: 15px;">📁 Clique aqui ou arraste arquivos para fazer upload</p>
                     <button class="upload-btn">Escolher Arquivos</button>
                 </div>
 
@@ -169,15 +356,13 @@ HTML_TEMPLATE = """
         </div>
 
         <div class="footer">
-            <p>Desenvolvido por Virgilio Borges</p>
-            <div>
-                <a href="mailto:virgilio.junior94@gmail.com">✉️ virgilio.junior94@gmail.com</a> |
-                <a href="tel:+5595981121572">📱 (95) 98112-1572</a>
-            </div>
-            <div class="social-icons">
-                <a href="https://github.com/virgiliojr94" target="_blank">🔗 GitHub</a>
-                <a href="https://www.linkedin.com/in/virgiliojunior94/" target="_blank">🔗 LinkedIn</a>
-            </div>
+            <p>LocalPDF - Ferramenta Corporativa Interna</p>
+            <p>
+                <a href="mailto:ti-infra@neogenomica.com.br">✉️ ti-infra@neogenomica.com.br</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 0.9em; opacity: 0.8;">
+                Processamento 100% local • Seus arquivos nunca saem da infraestrutura interna
+            </p>
         </div>
     </div>
 
@@ -283,7 +468,7 @@ HTML_TEMPLATE = """
             fileList.innerHTML = uploadedFiles.map((file, index) => `
                 <div class="file-item">
                     <span>📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                    <button onclick="removeFile(${index})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Remover</button>
+                    <button onclick="removeFile(${index})" class="remove-btn">Remover</button>
                 </div>
             `).join('');
 
@@ -347,6 +532,7 @@ HTML_TEMPLATE = """
 
             document.getElementById('progress').classList.remove('hidden');
             document.getElementById('convert-btn').disabled = true;
+            hideResult();
 
             try {
                 const response = await fetch('/convert', {
@@ -365,13 +551,15 @@ HTML_TEMPLATE = """
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
 
+                    document.getElementById('result').className = 'result';
                     document.getElementById('result').innerHTML = '<h4>✅ Sucesso!</h4><p>Arquivo convertido e baixado com sucesso!</p>';
                     document.getElementById('result').classList.remove('hidden');
                 } else {
                     throw new Error('Erro na conversão');
                 }
             } catch (error) {
-                document.getElementById('result').innerHTML = '<h4>❌ Erro!</h4><p>Ocorreu um erro durante a conversão. Tente novamente.</p>';
+                document.getElementById('result').className = 'error';
+                document.getElementById('result').innerHTML = '<h4>❌ Erro!</h4><p>Ocorreu um erro durante a conversão. Tente novamente ou contate o suporte TI.</p>';
                 document.getElementById('result').classList.remove('hidden');
             } finally {
                 document.getElementById('progress').classList.add('hidden');
