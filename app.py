@@ -45,231 +45,565 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocalPDF - Ferramentas PDF Corporativas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        :root {
+            --primary: #0066CC;
+            --primary-dark: #004C99;
+            --primary-light: #3385D6;
+            --secondary: #00A896;
+            --secondary-dark: #008778;
+            --accent: #0099FF;
+            --dark: #1A1A2E;
+            --gray: #64748B;
+            --light-gray: #F1F5F9;
+            --white: #FFFFFF;
+            --success: #10B981;
+            --error: #EF4444;
+            --warning: #F59E0B;
+        }
+        
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-            background: linear-gradient(135deg, #0066CC 0%, #00A896 100%); 
+            background: linear-gradient(135deg, #0066CC 0%, #00A896 100%);
             min-height: 100vh; 
+            position: relative;
+            overflow-x: hidden;
         }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 168, 150, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 102, 204, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(0, 153, 255, 0.2) 0%, transparent 50%);
+            animation: gradientShift 15s ease infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Header Styles */
         .header { 
             text-align: center; 
             color: white; 
-            margin-bottom: 40px; 
-            padding: 40px 0;
+            margin-bottom: 50px; 
+            padding: 60px 20px 40px;
+            animation: fadeInDown 0.8s ease;
         }
-        .header h1 { 
-            font-size: 3em; 
-            margin-bottom: 10px; 
-            font-weight: 800;
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .header p { 
-            font-size: 1.2em; 
-            opacity: 0.95; 
-            font-weight: 400;
-        }
+        
         .header .badge {
             display: inline-block;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            padding: 0.5rem 1.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 10px 24px;
             border-radius: 50px;
-            margin-bottom: 1rem;
+            margin-bottom: 24px;
             font-size: 0.9rem;
             font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: pulse 2s ease-in-out infinite;
         }
-        .tools-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-            gap: 20px; 
-            margin-bottom: 40px; 
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
-        .tool-card { 
-            background: white; 
-            border-radius: 15px; 
-            padding: 30px; 
-            text-align: center; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
-            transition: all 0.3s ease; 
-            cursor: pointer; 
-            border: 2px solid transparent;
+        
+        .header h1 { 
+            font-size: 4em; 
+            margin-bottom: 16px; 
+            font-weight: 900;
+            letter-spacing: -2px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(to right, #FFFFFF, #E0F2FE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        .tool-card:hover { 
-            transform: translateY(-8px); 
-            box-shadow: 0 15px 40px rgba(0,102,204,0.3);
-            border-color: #0066CC;
-        }
-        .tool-card h3 { 
-            color: #0066CC; 
-            margin-bottom: 15px; 
-            font-size: 1.4em; 
-            font-weight: 700;
-        }
-        .tool-card p { 
-            color: #64748B; 
-            margin-bottom: 20px; 
+        
+        .header p { 
+            font-size: 1.3em; 
+            opacity: 0.95; 
+            font-weight: 400;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            margin: 0 auto;
             line-height: 1.6;
         }
-        .upload-area { 
-            border: 2px dashed #CBD5E1; 
-            border-radius: 12px; 
-            padding: 40px; 
+        
+        /* Tools Grid */
+        .tools-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 24px; 
+            margin-bottom: 50px;
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Tool Card */
+        .tool-card { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px; 
+            padding: 36px; 
             text-align: center; 
-            background: #F8FAFC; 
-            margin: 20px 0; 
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.1),
+                0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            cursor: pointer; 
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .tool-card:hover::before {
+            left: 100%;
+        }
+        
+        .tool-card:hover { 
+            transform: translateY(-12px) scale(1.02); 
+            box-shadow: 
+                0 20px 60px rgba(0, 102, 204, 0.3),
+                0 8px 16px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+        }
+        
+        .tool-card .icon {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+        
+        .tool-card:hover .icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .tool-card h3 { 
+            color: var(--primary); 
+            margin-bottom: 16px; 
+            font-size: 1.5em; 
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .tool-card p { 
+            color: var(--gray); 
+            line-height: 1.7;
+            font-size: 1.05em;
+            font-weight: 400;
+        }
+        
+        /* Upload Area */
+        .upload-area { 
+            border: 3px dashed #CBD5E1; 
+            border-radius: 20px; 
+            padding: 60px 40px; 
+            text-align: center; 
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            margin: 30px 0; 
             transition: all 0.3s ease; 
+            cursor: pointer;
+            position: relative;
         }
+        
+        .upload-area::before {
+            content: '📤';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8em;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+        
         .upload-area:hover { 
-            border-color: #0066CC; 
-            background: #F0F9FF; 
-        }
-        .upload-area.dragover { 
-            border-color: #0066CC; 
-            background: #DBEAFE; 
+            border-color: var(--primary); 
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
             border-width: 3px;
+            transform: scale(1.01);
         }
+        
+        .upload-area.dragover { 
+            border-color: var(--secondary); 
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); 
+            border-width: 4px;
+            transform: scale(1.02);
+        }
+        
+        .upload-area .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .upload-area p {
+            color: var(--gray);
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
         .file-input { display: none; }
+        
         .upload-btn { 
-            background: #0066CC; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white; 
-            padding: 12px 30px; 
+            padding: 16px 40px; 
             border: none; 
-            border-radius: 8px; 
+            border-radius: 12px; 
             cursor: pointer; 
             font-size: 1.1em; 
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.3s ease; 
+            box-shadow: 0 4px 20px rgba(0, 102, 204, 0.3);
+            letter-spacing: 0.5px;
         }
+        
         .upload-btn:hover { 
-            background: #004C99; 
-            transform: translateY(-2px);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 102, 204, 0.4);
         }
+        
+        .upload-btn:active {
+            transform: translateY(-1px);
+        }
+        
         .convert-btn { 
-            background: #00A896; 
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
             color: white; 
-            padding: 15px 40px; 
+            padding: 18px 50px; 
             border: none; 
-            border-radius: 8px; 
+            border-radius: 12px; 
             cursor: pointer; 
-            font-size: 1.2em; 
-            font-weight: 600;
-            margin-top: 20px; 
+            font-size: 1.3em; 
+            font-weight: 700;
+            margin-top: 30px; 
             transition: all 0.3s ease; 
+            box-shadow: 0 6px 25px rgba(0, 168, 150, 0.3);
+            letter-spacing: 0.5px;
         }
+        
         .convert-btn:hover { 
-            background: #008778; 
-            transform: translateY(-2px);
+            background: linear-gradient(135deg, var(--secondary-dark) 0%, #006D5F 100%);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 35px rgba(0, 168, 150, 0.4);
         }
+        
         .convert-btn:disabled { 
-            background: #CBD5E1; 
+            background: linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%);
             cursor: not-allowed; 
             transform: none;
+            box-shadow: none;
         }
-        .file-list { margin-top: 20px; }
+        
+        /* File List */
+        .file-list { 
+            margin-top: 30px; 
+        }
+        
         .file-item { 
-            background: #F1F5F9; 
-            padding: 12px 20px; 
-            margin: 8px 0; 
-            border-radius: 8px; 
+            background: white;
+            padding: 18px 24px; 
+            margin: 12px 0; 
+            border-radius: 12px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            border: 1px solid #E2E8F0;
+            border: 2px solid #E2E8F0;
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease;
         }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .file-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.1);
+            transform: translateX(5px);
+        }
+        
         .file-item span {
-            color: #334155;
-            font-weight: 500;
+            color: var(--dark);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+        
+        .file-item span::before {
+            content: '📄';
+            font-size: 1.5em;
+        }
+        
+        /* Progress Bar */
         .progress { 
             width: 100%; 
             background: #E2E8F0; 
-            border-radius: 10px; 
-            margin: 20px 0; 
-            height: 24px;
+            border-radius: 50px; 
+            margin: 30px 0; 
+            height: 30px;
             overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
         }
+        
         .progress-bar { 
             height: 100%; 
-            background: linear-gradient(90deg, #0066CC 0%, #00A896 100%); 
-            border-radius: 10px; 
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50px; 
             width: 0%; 
-            transition: width 0.3s ease; 
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: progressAnimation 1.5s ease infinite;
         }
+        
+        @keyframes progressAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            to { left: 100%; }
+        }
+        
+        /* Result Messages */
         .result { 
-            margin-top: 20px; 
-            padding: 20px; 
-            background: #D1FAE5; 
-            border-radius: 10px; 
+            margin-top: 30px; 
+            padding: 24px 28px; 
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border-radius: 16px; 
             color: #065F46; 
-            border: 2px solid #10B981;
+            border: 2px solid var(--success);
+            animation: slideIn 0.4s ease;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
         }
+        
         .result h4 {
-            margin-bottom: 10px;
-            font-size: 1.2em;
+            margin-bottom: 12px;
+            font-size: 1.3em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+        
+        .result p {
+            font-size: 1.05em;
+            line-height: 1.6;
+        }
+        
         .error { 
-            margin-top: 20px; 
-            padding: 20px; 
-            background: #FEE2E2; 
-            border-radius: 10px; 
+            margin-top: 30px; 
+            padding: 24px 28px; 
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            border-radius: 16px; 
             color: #991B1B; 
-            border: 2px solid #EF4444;
+            border: 2px solid var(--error);
+            animation: shake 0.5s ease;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
         }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .error h4 {
+            margin-bottom: 12px;
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+        
         .hidden { display: none; }
+        
+        /* Back Button */
         .back-btn { 
-            background: #64748B; 
-            color: white; 
-            padding: 10px 24px; 
-            border: none; 
-            border-radius: 8px; 
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary); 
+            padding: 12px 28px; 
+            border: 2px solid var(--primary);
+            border-radius: 12px; 
             cursor: pointer; 
-            margin-bottom: 20px; 
-            font-weight: 600;
+            margin-bottom: 30px; 
+            font-weight: 700;
+            font-size: 1.05em;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 102, 204, 0.2);
         }
+        
         .back-btn:hover { 
-            background: #475569; 
+            background: var(--primary);
+            color: white;
+            transform: translateX(-5px);
+            box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
         }
+        
+        /* Remove Button */
+        .remove-btn {
+            background: linear-gradient(135deg, var(--error) 0%, #DC2626 100%);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+        }
+        
+        .remove-btn:hover {
+            background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Footer */
         .footer { 
             text-align: center; 
             color: white; 
-            margin-top: 60px; 
-            padding: 30px 0; 
-            border-top: 1px solid rgba(255,255,255,0.2); 
+            margin-top: 80px; 
+            padding: 40px 20px; 
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px 20px 0 0;
         }
+        
         .footer p { 
-            margin-bottom: 10px; 
-            opacity: 0.9;
-            font-size: 1rem;
+            margin-bottom: 12px; 
+            opacity: 0.95;
+            font-size: 1.05em;
+            font-weight: 500;
         }
+        
         .footer a { 
             color: #FFFFFF; 
             text-decoration: none; 
-            font-weight: 600;
-            transition: opacity 0.3s;
-        }
-        .footer a:hover { 
-            opacity: 0.8;
-            text-decoration: underline; 
-        }
-        .remove-btn {
-            background: #EF4444;
-            color: white;
-            border: none;
-            padding: 6px 16px;
+            font-weight: 700;
+            transition: all 0.3s;
+            padding: 4px 8px;
             border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .remove-btn:hover {
-            background: #DC2626;
         }
         
+        .footer a:hover { 
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .footer .security-note {
+            margin-top: 20px;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            display: inline-block;
+            font-size: 0.95em;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Responsive */
         @media (max-width: 768px) {
-            .header h1 { font-size: 2em; }
+            .header h1 { font-size: 2.5em; }
             .tools-grid { grid-template-columns: 1fr; }
+            .tool-card { padding: 28px; }
+            .upload-area { padding: 40px 20px; }
+            .container { padding: 15px; }
+        }
+        
+        /* Loading Animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
         }
     </style>
 </head>
@@ -278,50 +612,60 @@ HTML_TEMPLATE = """
         <div class="header">
             <div class="badge">🔒 100% Local & Seguro</div>
             <h1>📄 LocalPDF</h1>
-            <p>Ferramentas PDF corporativas com total privacidade</p>
+            <p>Ferramentas PDF corporativas com total privacidade e segurança</p>
         </div>
 
         <div id="home-view">
             <div class="tools-grid">
                 <div class="tool-card" onclick="showTool('pdf-to-images')">
-                    <h3>🖼️ PDF para Imagens</h3>
+                    <div class="icon">🖼️</div>
+                    <h3>PDF para Imagens</h3>
                     <p>Converta páginas PDF em imagens JPG ou PNG</p>
                 </div>
                 <div class="tool-card" onclick="showTool('images-to-pdf')">
-                    <h3>📄 Imagens para PDF</h3>
+                    <div class="icon">📄</div>
+                    <h3>Imagens para PDF</h3>
                     <p>Combine várias imagens em um único PDF</p>
                 </div>
                 <div class="tool-card" onclick="showTool('merge-pdf')">
-                    <h3>🔗 Mesclar PDFs</h3>
+                    <div class="icon">🔗</div>
+                    <h3>Mesclar PDFs</h3>
                     <p>Combine vários PDFs em um documento único</p>
                 </div>
                 <div class="tool-card" onclick="showTool('split-pdf')">
-                    <h3>✂️ Dividir PDF</h3>
+                    <div class="icon">✂️</div>
+                    <h3>Dividir PDF</h3>
                     <p>Extraia páginas específicas do seu PDF</p>
                 </div>
                 <div class="tool-card" onclick="showTool('compress-pdf')">
-                    <h3>📦 Comprimir PDF</h3>
+                    <div class="icon">📦</div>
+                    <h3>Comprimir PDF</h3>
                     <p>Reduza o tamanho do seu arquivo PDF</p>
                 </div>
                 <div class="tool-card" onclick="showTool('pdf-to-pdfa')">
-                    <h3>🔒 PDF para PDF/A</h3>
-                    <p>Padronize seu PDF para arquivamento (PDF/A)</p>
+                    <div class="icon">🔒</div>
+                    <h3>PDF para PDF/A</h3>
+                    <p>Padronize seu PDF para arquivamento</p>
                 </div>
                 <div class="tool-card" onclick="showTool('word-to-pdf')">
-                    <h3>📝 Word para PDF</h3>
-                    <p>Converta um ou mais documentos DOCX para PDF</p>
+                    <div class="icon">📝</div>
+                    <h3>Word para PDF</h3>
+                    <p>Converta documentos DOCX para PDF</p>
                 </div>
                 <div class="tool-card" onclick="showTool('excel-to-pdf')">
-                    <h3>📊 Excel para PDF</h3>
+                    <div class="icon">📊</div>
+                    <h3>Excel para PDF</h3>
                     <p>Converta planilhas XLSX para PDF</p>
                 </div>
                 <div class="tool-card" onclick="showTool('txt-to-pdf')">
-                    <h3>📄 TXT para PDF</h3>
-                    <p>Converta arquivos de texto simples para PDF</p>
+                    <div class="icon">📃</div>
+                    <h3>TXT para PDF</h3>
+                    <p>Converta arquivos de texto para PDF</p>
                 </div>
                 <div class="tool-card" onclick="showTool('pdf-to-word')">
-                    <h3>🔄 PDF para Word</h3>
-                    <p>Converta documentos PDF para Word (.docx) editável</p>
+                    <div class="icon">🔄</div>
+                    <h3>PDF para Word</h3>
+                    <p>Converta PDF para Word editável</p>
                 </div>
             </div>
         </div>
@@ -335,17 +679,14 @@ HTML_TEMPLATE = """
 
                 <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
                     <input type="file" id="file-input" class="file-input" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,.txt,.xlsx">
-                    <p style="color: #64748B; font-size: 1.1em; margin-bottom: 15px;">📁 Clique aqui ou arraste arquivos para fazer upload</p>
+                    <span class="upload-icon">📁</span>
+                    <p>Clique aqui ou arraste arquivos para fazer upload</p>
                     <button class="upload-btn">Escolher Arquivos</button>
                 </div>
 
                 <div id="file-list" class="file-list"></div>
 
-                <div id="options" class="hidden">
-                    <!-- Opções específicas para cada ferramenta -->
-                </div>
-
-                <button id="convert-btn" class="convert-btn hidden" onclick="convertFiles()">Converter</button>
+                <button id="convert-btn" class="convert-btn hidden" onclick="convertFiles()">🚀 Converter Agora</button>
 
                 <div id="progress" class="progress hidden">
                     <div id="progress-bar" class="progress-bar"></div>
@@ -356,13 +697,13 @@ HTML_TEMPLATE = """
         </div>
 
         <div class="footer">
-            <p>LocalPDF - Ferramenta Corporativa Interna</p>
+            <p><strong>LocalPDF</strong> - Ferramenta Corporativa Interna</p>
             <p>
                 <a href="mailto:ti-infra@neogenomica.com.br">✉️ ti-infra@neogenomica.com.br</a>
             </p>
-            <p style="margin-top: 15px; font-size: 0.9em; opacity: 0.8;">
-                Processamento 100% local • Seus arquivos nunca saem da infraestrutura interna
-            </p>
+            <div class="security-note">
+                🛡️ Processamento 100% local • Seus arquivos nunca saem da infraestrutura interna
+            </div>
         </div>
     </div>
 
@@ -409,7 +750,7 @@ HTML_TEMPLATE = """
             },
             'word-to-pdf': {
                 title: '📝 Word para PDF',
-                description: 'Converta documentos Word (.docx) para PDF - aceita múltiplos arquivos',
+                description: 'Converta documentos Word (.docx) para PDF',
                 accept: '.docx',
                 multiple: true
             },
@@ -420,7 +761,7 @@ HTML_TEMPLATE = """
                 multiple: false
             },
             'txt-to-pdf': {
-                title: '📄 TXT para PDF',
+                title: '📃 TXT para PDF',
                 description: 'Converta arquivos de texto simples (.txt) para PDF',
                 accept: '.txt',
                 multiple: false
@@ -467,7 +808,7 @@ HTML_TEMPLATE = """
 
             fileList.innerHTML = uploadedFiles.map((file, index) => `
                 <div class="file-item">
-                    <span>📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    <span>${file.name} <small style="opacity:0.7">(${(file.size / 1024 / 1024).toFixed(2)} MB)</small></span>
                     <button onclick="removeFile(${index})" class="remove-btn">Remover</button>
                 </div>
             `).join('');
@@ -485,7 +826,6 @@ HTML_TEMPLATE = """
             document.getElementById('progress').classList.add('hidden');
         }
 
-        // Upload de arquivos
         document.getElementById('file-input').addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
             if (tools[currentTool].multiple) {
@@ -496,7 +836,6 @@ HTML_TEMPLATE = """
             updateFileList();
         });
 
-        // Drag and drop
         const uploadArea = document.getElementById('upload-area');
         uploadArea.addEventListener('dragover', function(e) {
             e.preventDefault();
@@ -530,15 +869,27 @@ HTML_TEMPLATE = """
             });
             formData.append('tool', currentTool);
 
+            const progressBar = document.getElementById('progress-bar');
             document.getElementById('progress').classList.remove('hidden');
             document.getElementById('convert-btn').disabled = true;
             hideResult();
+
+            // Simulate progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress >= 90) clearInterval(progressInterval);
+                progressBar.style.width = progress + '%';
+            }, 100);
 
             try {
                 const response = await fetch('/convert', {
                     method: 'POST',
                     body: formData
                 });
+
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
 
                 if (response.ok) {
                     const blob = await response.blob();
@@ -562,7 +913,10 @@ HTML_TEMPLATE = """
                 document.getElementById('result').innerHTML = '<h4>❌ Erro!</h4><p>Ocorreu um erro durante a conversão. Tente novamente ou contate o suporte TI.</p>';
                 document.getElementById('result').classList.remove('hidden');
             } finally {
-                document.getElementById('progress').classList.add('hidden');
+                setTimeout(() => {
+                    document.getElementById('progress').classList.add('hidden');
+                    progressBar.style.width = '0%';
+                }, 1000);
                 document.getElementById('convert-btn').disabled = false;
             }
         }
@@ -571,6 +925,8 @@ HTML_TEMPLATE = """
 </html>
 """
 
+
+# [Resto do código Python permanece igual - funções de conversão]
 
 @app.route("/")
 def index():
@@ -600,31 +956,24 @@ def excel_to_pdf(file, temp_dir):
                 ]
                 line_text = " | ".join(row_data)
 
-                # Simples quebra de linha para caber na página
-                max_line_width = int(
-                    (width - 100) / 6
-                )  # Estimativa de caracteres por linha
+                max_line_width = int((width - 100) / 6)
                 if len(line_text) > max_line_width:
-                    # Implementação mais robusta de quebra de linha seria necessária
                     line_text = line_text[:max_line_width] + "..."
 
                 if y_position < 50:
                     c.showPage()
                     y_position = height - 50
-                    c.setFont("Helvetica", 10)  # Reset font after new page
+                    c.setFont("Helvetica", 10)
 
                 c.drawString(50, y_position, line_text)
-                y_position -= 15  # Espaçamento menor para linhas de planilha
+                y_position -= 15
 
-            y_position -= 30  # Espaçamento entre planilhas
-            if (
-                y_position < 50 and sheet_name != workbook.sheetnames[-1]
-            ):  # Only show new page if not last sheet
+            y_position -= 30
+            if y_position < 50 and sheet_name != workbook.sheetnames[-1]:
                 c.showPage()
                 y_position = height - 50
 
     except Exception as e:
-        # Handle potential errors with Excel files
         c.drawString(50, y_position - 20, f"Erro ao ler planilha: {e}")
         print(f"Erro ao ler planilha Excel: {e}")
 
@@ -646,18 +995,13 @@ def txt_to_pdf(file, temp_dir):
     try:
         with open(txt_path, "r", encoding="utf-8") as f:
             for line in f:
-                # Simples quebra de linha para caber na página
                 text_line = line.strip()
-                max_width_px = width - 100  # Margens de 50px de cada lado
+                max_width_px = width - 100
 
-                # Estimar a largura do texto para quebrar linhas
-                # ReportLab não tem quebra automática de texto complexa por default
-                # Esta é uma estimativa MUITO simples; para algo robusto, precisaria de TextObject
-                approx_char_width_px = 7  # Média para Helvetica 12
+                approx_char_width_px = 7
                 chars_per_line = int(max_width_px / approx_char_width_px)
 
                 if len(text_line) > chars_per_line:
-                    # Quebra simples da linha
                     chunks = [
                         text_line[i : i + chars_per_line]
                         for i in range(0, len(text_line), chars_per_line)
@@ -666,13 +1010,13 @@ def txt_to_pdf(file, temp_dir):
                     chunks = [text_line]
 
                 for chunk in chunks:
-                    if y_position < 50:  # Margem inferior
+                    if y_position < 50:
                         c.showPage()
                         y_position = height - 50
-                        c.setFont("Helvetica", 12)  # Reset font after new page
+                        c.setFont("Helvetica", 12)
 
                     c.drawString(50, y_position, chunk)
-                    y_position -= 15  # Espaçamento entre linhas
+                    y_position -= 15
 
     except Exception as e:
         c.drawString(50, y_position - 20, f"Erro ao ler arquivo de texto: {e}")
@@ -693,12 +1037,10 @@ def convert():
     if not files or files[0].filename == "":
         return jsonify({"error": "Nenhum arquivo selecionado"}), 400
 
-    # Validação de extensão dos arquivos enviados
     for f in files:
         if not allowed_file(f.filename):
             return jsonify({"error": f"Extensão não permitida: {f.filename}"}), 400
 
-    # Criar diretório temporário
     temp_dir = tempfile.mkdtemp()
     response = None
     try:
@@ -730,7 +1072,6 @@ def convert():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        # Diretório temporário limpo após preparar resposta (BytesIO) evitando remoção antecipada
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
 
@@ -744,7 +1085,7 @@ def pdf_to_images(file, temp_dir):
 
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
-        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x resolution
+        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
         img_path = os.path.join(temp_dir, f"page_{page_num + 1}.png")
         pix.save(img_path)
         output_files.append(img_path)
@@ -818,7 +1159,6 @@ def compress_pdf(file, temp_dir):
 
 
 def pdf_to_pdfa(files, temp_dir):
-    """Converte um ou mais PDFs para PDF/A-1b usando Ghostscript."""
     if not isinstance(files, list):
         files = [files]
 
@@ -862,39 +1202,26 @@ def pdf_to_pdfa(files, temp_dir):
 
 
 def word_to_pdf(files, temp_dir):
-    """
-    Converte um ou múltiplos arquivos DOCX para PDF
-    Se houver múltiplos arquivos, mescla todos em um único PDF
-    """
     from docx import Document
-    from reportlab.lib.pagesizes import letter
-    from reportlab.pdfgen import canvas
 
-    # Criar PDF de saída
     pdf_path = os.path.join(temp_dir, "word_to_pdf.pdf")
     c = canvas.Canvas(pdf_path, pagesize=letter)
     width, height = letter
     y_position = height - 50
 
-    # Se for apenas um arquivo (compatibilidade)
     if not isinstance(files, list):
         files = [files]
 
-    # Processar cada arquivo DOCX
     for file_idx, file in enumerate(files):
         docx_path = os.path.join(temp_dir, secure_filename(file.filename))
         file.save(docx_path)
 
-        # Lê o documento Word
         doc = Document(docx_path)
 
-        # Adicionar separador visual (exceto no primeiro documento)
         if file_idx > 0:
-            # Quebra de página
             c.showPage()
             y_position = height - 50
 
-            # Adicionar cabeçalho com nome do arquivo
             c.setFont("Helvetica-Bold", 12)
             c.drawString(50, y_position, f"{'=' * 60}")
             y_position -= 20
@@ -904,14 +1231,11 @@ def word_to_pdf(files, temp_dir):
             y_position -= 30
             c.setFont("Helvetica", 11)
 
-        # Processar parágrafos
         for paragraph in doc.paragraphs:
             if paragraph.text.strip():
-                # Quebra texto longo em múltiplas linhas
                 text = paragraph.text
                 max_width = width - 100
 
-                # Estimativa simples de largura de texto
                 approx_char_width = 6
                 chars_per_line = int(max_width / approx_char_width)
 
@@ -940,21 +1264,17 @@ def word_to_pdf(files, temp_dir):
                     c.drawString(50, y_position, line)
                     y_position -= 20
 
-        # Processar tabelas (se houver)
         for table in doc.tables:
-            # Adicionar espaçamento antes da tabela
             y_position -= 10
 
             if y_position < 100:
                 c.showPage()
                 y_position = height - 50
 
-            # Desenhar linhas da tabela
             c.setFont("Helvetica", 9)
             for row in table.rows:
                 row_text = " | ".join([cell.text for cell in row.cells])
 
-                # Quebrar texto da linha se necessário
                 if len(row_text) > 100:
                     row_text = row_text[:97] + "..."
 
@@ -965,7 +1285,6 @@ def word_to_pdf(files, temp_dir):
                 c.drawString(50, y_position, row_text)
                 y_position -= 15
 
-            # Espaçamento após tabela
             y_position -= 10
             c.setFont("Helvetica", 11)
 
@@ -974,9 +1293,6 @@ def word_to_pdf(files, temp_dir):
 
 
 def pdf_to_word(file, temp_dir):
-    """
-    Convert PDF to Word (.docx) format.
-    """
     pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
     file.save(pdf_path)
 
@@ -1001,7 +1317,6 @@ def pdf_to_word(file, temp_dir):
 
 
 def build_response(output_files, temp_dir):
-    """Monta resposta enviando arquivos como attachment sem risco de remoção prematura do diretório temporário."""
     if len(output_files) == 1:
         file_path = output_files[0]
         filename = os.path.basename(file_path)
