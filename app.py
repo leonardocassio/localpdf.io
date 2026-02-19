@@ -9,13 +9,7 @@ import zipfile
 import fitz  # PyMuPDF
 import ghostscript
 import openpyxl
-from flask import (
-    Flask,
-    jsonify,
-    render_template_string,
-    request,
-    send_file,
-)
+from flask import Flask, jsonify, render_template_string, request, send_file
 from pdf2docx import Converter
 from pdf2docx.converter import ConversionException
 from PIL import Image
@@ -28,13 +22,12 @@ app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 100MB max
 app.config["UPLOAD_FOLDER"] = "uploads"
 app.config["OUTPUT_FOLDER"] = "outputs"
 
-# Criar diretórios se não existirem
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["OUTPUT_FOLDER"], exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"pdf", "docx", "txt", "xlsx", "jpg", "jpeg", "png"}
 
-# ── Gerenciamento de tarefas em background ───────────────────────────────────
+# Gerenciamento de tarefas em background
 tasks: dict = {}
 tasks_lock = threading.Lock()
 
@@ -44,8 +37,6 @@ def allowed_file(filename):
 
 
 class SavedFile:
-    """Wrapper para arquivos já salvos no disco, compatível com FileStorage."""
-
     def __init__(self, path: str):
         self.path = path
         self.filename = os.path.basename(path)
@@ -59,8 +50,8 @@ def set_progress(task_id: str, progress: int, message: str = "", status: str = "
     with tasks_lock:
         if task_id in tasks:
             tasks[task_id]["progress"] = progress
-            tasks[task_id]["message"] = message
-            tasks[task_id]["status"] = status
+            tasks[task_id]["message"]  = message
+            tasks[task_id]["status"]   = status
 
 HTML_TEMPLATE = """
 
@@ -69,7 +60,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LocalPDF - Ferramentas PDF Corporativas</title>
+    <title>NeoConvert - Ferramentas PDF Corporativas</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { 
@@ -636,7 +627,7 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="header">
             <div class="badge">🔒 100% Local & Seguro</div>
-            <h1>📄 LocalPDF</h1>
+            <h1>📄 NeoConvert</h1>
             <p>Ferramentas PDF corporativas com total privacidade e segurança</p>
         </div>
 
@@ -697,7 +688,7 @@ HTML_TEMPLATE = """
 
         <!-- Tool Views -->
         <div id="tool-views" class="hidden">
-            <button class="back-btn" onclick="showHome()">← Voltar</button>
+            <button class="back-btn" onclick="showHome()">&larr; Voltar</button>
             <div class="tool-card">
                 <h3 id="tool-title"></h3>
                 <p id="tool-description"></p>
@@ -716,14 +707,14 @@ HTML_TEMPLATE = """
                 <div id="progress" class="progress hidden">
                     <div id="progress-bar" class="progress-bar"></div>
                 </div>
-                <p id="progress-msg" style="text-align:center;color:var(--gray);margin:8px 0 0;font-size:0.9em;min-height:1.3em;transition:opacity 0.3s;"></p>
+                <p id="progress-msg" style="text-align:center;color:var(--gray);margin:8px 0 0;font-size:0.9em;min-height:1.3em;"></p>
 
                 <div id="result" class="hidden"></div>
             </div>
         </div>
 
         <div class="footer">
-            <p><strong>LocalPDF</strong> - Ferramenta Corporativa Interna</p>
+            <p><strong>NeoConvert</strong> - Ferramenta Corporativa Interna</p>
             <p>
                 <a href="mailto:ti-infra@neogenomica.com.br">✉️ ti-infra@neogenomica.com.br</a>
             </p>
@@ -738,79 +729,27 @@ HTML_TEMPLATE = """
         let uploadedFiles = [];
 
         const tools = {
-            'pdf-to-images': {
-                title: '🖼️ PDF para Imagens',
-                description: 'Converta cada página do seu PDF em imagens separadas',
-                accept: '.pdf',
-                multiple: false
-            },
-            'images-to-pdf': {
-                title: '📄 Imagens para PDF',
-                description: 'Combine múltiplas imagens em um único arquivo PDF',
-                accept: '.jpg,.jpeg,.png',
-                multiple: true
-            },
-            'merge-pdf': {
-                title: '🔗 Mesclar PDFs',
-                description: 'Combine vários arquivos PDF em um documento único',
-                accept: '.pdf',
-                multiple: true
-            },
-            'split-pdf': {
-                title: '✂️ Dividir PDF',
-                description: 'Extraia páginas específicas do seu PDF',
-                accept: '.pdf',
-                multiple: false
-            },
-            'compress-pdf': {
-                title: '📦 Comprimir PDF',
-                description: 'Reduza o tamanho do arquivo PDF mantendo a qualidade',
-                accept: '.pdf',
-                multiple: false
-            },
-            'pdf-to-pdfa': {
-                title: '🔒 PDF para PDF/A',
-                description: 'Converta PDFs para o padrão de arquivamento PDF/A-1b',
-                accept: '.pdf',
-                multiple: true
-            },
-            'word-to-pdf': {
-                title: '📝 Word para PDF',
-                description: 'Converta documentos Word (.docx) para PDF',
-                accept: '.docx',
-                multiple: true
-            },
-            'excel-to-pdf': {
-                title: '📊 Excel para PDF',
-                description: 'Converta planilhas Excel (.xlsx) para PDF',
-                accept: '.xlsx',
-                multiple: false
-            },
-            'txt-to-pdf': {
-                title: '📃 TXT para PDF',
-                description: 'Converta arquivos de texto simples (.txt) para PDF',
-                accept: '.txt',
-                multiple: false
-            },
-            'pdf-to-word': {
-                title: '🔄 PDF para Word',
-                description: 'Converta seus documentos PDF para Word (.docx) editável',
-                accept: '.pdf',
-                multiple: false
-            }
+            'pdf-to-images': { title: 'PDF para Imagens',    description: 'Converta cada pagina do seu PDF em imagens separadas', accept: '.pdf',              multiple: false },
+            'images-to-pdf': { title: 'Imagens para PDF',    description: 'Combine multiplas imagens em um unico arquivo PDF',    accept: '.jpg,.jpeg,.png',   multiple: true  },
+            'merge-pdf':     { title: 'Mesclar PDFs',        description: 'Combine varios arquivos PDF em um documento unico',    accept: '.pdf',              multiple: true  },
+            'split-pdf':     { title: 'Dividir PDF',         description: 'Extraia paginas especificas do seu PDF',               accept: '.pdf',              multiple: false },
+            'compress-pdf':  { title: 'Comprimir PDF',       description: 'Reduza o tamanho do arquivo PDF mantendo a qualidade', accept: '.pdf',              multiple: false },
+            'pdf-to-pdfa':   { title: 'PDF para PDF/A',      description: 'Converta PDFs para o padrao de arquivamento PDF/A-1b', accept: '.pdf',              multiple: true  },
+            'word-to-pdf':   { title: 'Word para PDF',       description: 'Converta documentos Word (.docx) para PDF',           accept: '.docx',             multiple: true  },
+            'excel-to-pdf':  { title: 'Excel para PDF',      description: 'Converta planilhas Excel (.xlsx) para PDF',           accept: '.xlsx',             multiple: false },
+            'txt-to-pdf':    { title: 'TXT para PDF',        description: 'Converta arquivos de texto simples (.txt) para PDF',  accept: '.txt',              multiple: false },
+            'pdf-to-word':   { title: 'PDF para Word',       description: 'Converta seus documentos PDF para Word (.docx)',      accept: '.pdf',              multiple: false }
         };
 
         function showTool(toolName) {
             currentTool = toolName;
             const tool = tools[toolName];
-
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('tool-views').classList.remove('hidden');
-            document.getElementById('tool-title').innerText = tool.title;
+            document.getElementById('tool-title').innerText       = tool.title;
             document.getElementById('tool-description').innerText = tool.description;
-            document.getElementById('file-input').accept = tool.accept;
+            document.getElementById('file-input').accept   = tool.accept;
             document.getElementById('file-input').multiple = tool.multiple;
-
             uploadedFiles = [];
             updateFileList();
             hideResult();
@@ -823,22 +762,18 @@ HTML_TEMPLATE = """
         }
 
         function updateFileList() {
-            const fileList = document.getElementById('file-list');
+            const fileList   = document.getElementById('file-list');
             const convertBtn = document.getElementById('convert-btn');
-
             if (uploadedFiles.length === 0) {
                 fileList.innerHTML = '';
                 convertBtn.classList.add('hidden');
                 return;
             }
-
             fileList.innerHTML = uploadedFiles.map((file, index) => `
                 <div class="file-item">
-                    <span>${file.name} <small style="opacity:0.7">(${(file.size / 1024 / 1024).toFixed(2)} MB)</small></span>
+                    <span>${file.name} <small style="opacity:0.7">(${(file.size/1024/1024).toFixed(2)} MB)</small></span>
                     <button onclick="removeFile(${index})" class="remove-btn">Remover</button>
-                </div>
-            `).join('');
-
+                </div>`).join('');
             convertBtn.classList.remove('hidden');
         }
 
@@ -856,35 +791,18 @@ HTML_TEMPLATE = """
 
         document.getElementById('file-input').addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
-            if (tools[currentTool].multiple) {
-                uploadedFiles = uploadedFiles.concat(files);
-            } else {
-                uploadedFiles = files.slice(0, 1);
-            }
+            uploadedFiles = tools[currentTool].multiple ? uploadedFiles.concat(files) : files.slice(0,1);
             updateFileList();
         });
 
         const uploadArea = document.getElementById('upload-area');
-        uploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-        });
-
+        uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', e => { e.preventDefault(); uploadArea.classList.remove('dragover'); });
         uploadArea.addEventListener('drop', function(e) {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
-
             const files = Array.from(e.dataTransfer.files);
-            if (tools[currentTool].multiple) {
-                uploadedFiles = uploadedFiles.concat(files);
-            } else {
-                uploadedFiles = files.slice(0, 1);
-            }
+            uploadedFiles = tools[currentTool].multiple ? uploadedFiles.concat(files) : files.slice(0,1);
             updateFileList();
         });
 
@@ -902,67 +820,44 @@ HTML_TEMPLATE = """
             hideResult();
 
             progressBar.style.width = '5%';
-            if (progressMsg) progressMsg.textContent = '⏳ Enviando arquivos...';
+            if (progressMsg) progressMsg.textContent = 'Enviando arquivos...';
 
             try {
-                const response = await fetch('/convert', {
-                    method: 'POST',
-                    body: formData
-                });
-
+                const response = await fetch('/convert', { method: 'POST', body: formData });
                 if (!response.ok) {
                     const err = await response.json();
-                    throw new Error(err.error || 'Erro ao iniciar conversão');
+                    throw new Error(err.error || 'Erro ao iniciar conversao');
                 }
 
-                const data = await response.json();
-                const taskId = data.task_id;
+                const { task_id } = await response.json();
 
-                // Polling de progresso real
                 await new Promise((resolve, reject) => {
                     const interval = setInterval(async () => {
                         try {
-                            const res = await fetch(`/progress/${taskId}`);
-                            if (!res.ok) {
-                                clearInterval(interval);
-                                reject(new Error('Erro ao verificar progresso'));
-                                return;
-                            }
+                            const res = await fetch(`/progress/${task_id}`);
+                            if (!res.ok) { clearInterval(interval); reject(new Error('Erro ao verificar progresso')); return; }
                             const prog = await res.json();
                             progressBar.style.width = prog.progress + '%';
                             if (progressMsg) progressMsg.textContent = prog.message;
-
-                            if (prog.status === 'done') {
-                                clearInterval(interval);
-                                progressBar.style.width = '100%';
-                                if (progressMsg) progressMsg.textContent = '✅ Concluído! Baixando...';
-                                resolve();
-                            } else if (prog.status === 'error') {
-                                clearInterval(interval);
-                                reject(new Error(prog.message));
-                            }
-                        } catch (e) {
-                            clearInterval(interval);
-                            reject(e);
-                        }
+                            if (prog.status === 'done')  { clearInterval(interval); progressBar.style.width = '100%'; resolve(); }
+                            if (prog.status === 'error') { clearInterval(interval); reject(new Error(prog.message)); }
+                        } catch(e) { clearInterval(interval); reject(e); }
                     }, 600);
                 });
 
-                // Download automático
+                if (progressMsg) progressMsg.textContent = 'Baixando arquivo...';
                 const a = document.createElement('a');
-                a.href = `/download/${taskId}`;
+                a.href = `/download/${task_id}`;
                 a.download = '';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
 
                 document.getElementById('result').className = 'result';
-                document.getElementById('result').innerHTML = '<h4>✅ Sucesso!</h4><p>Arquivo convertido e baixado com sucesso!</p>';
+                document.getElementById('result').innerHTML  = '<h4>Sucesso!</h4><p>Arquivo convertido e baixado com sucesso!</p>';
                 document.getElementById('result').classList.remove('hidden');
 
             } catch (error) {
                 document.getElementById('result').className = 'error';
-                document.getElementById('result').innerHTML = `<h4>❌ Erro!</h4><p>${error.message || 'Ocorreu um erro durante a conversão. Tente novamente ou contate o suporte TI.'}</p>`;
+                document.getElementById('result').innerHTML  = `<h4>Erro!</h4><p>${error.message || 'Ocorreu um erro. Tente novamente.'}</p>`;
                 document.getElementById('result').classList.remove('hidden');
             } finally {
                 setTimeout(() => {
@@ -1390,9 +1285,6 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)"""
 
 
-
-# ── Rotas principais ─────────────────────────────────────────────────────────
-
 @app.route("/")
 def index():
     return render_template_string(HTML_TEMPLATE)
@@ -1404,19 +1296,18 @@ def convert():
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
 
     files = request.files.getlist("files")
-    tool = request.form.get("tool")
+    tool  = request.form.get("tool")
 
     if not files or files[0].filename == "":
         return jsonify({"error": "Nenhum arquivo selecionado"}), 400
 
     for f in files:
         if not allowed_file(f.filename):
-            return jsonify({"error": f"Extensão não permitida: {f.filename}"}), 400
+            return jsonify({"error": f"Extensao nao permitida: {f.filename}"}), 400
 
-    task_id = str(uuid.uuid4())
+    task_id  = str(uuid.uuid4())
     temp_dir = tempfile.mkdtemp()
 
-    # Salvar arquivos no contexto da requisição antes de passar para a thread
     saved_paths = []
     for f in files:
         path = os.path.join(temp_dir, secure_filename(f.filename))
@@ -1425,19 +1316,18 @@ def convert():
 
     with tasks_lock:
         tasks[task_id] = {
-            "progress": 0,
-            "status": "processing",
-            "message": "Aguardando início...",
+            "progress":    0,
+            "status":      "processing",
+            "message":     "Aguardando inicio...",
             "result_path": None,
-            "temp_dir": temp_dir,
+            "temp_dir":    temp_dir,
         }
 
-    thread = threading.Thread(
+    threading.Thread(
         target=_process_in_background,
         args=(task_id, tool, saved_paths, temp_dir),
         daemon=True,
-    )
-    thread.start()
+    ).start()
 
     return jsonify({"task_id": task_id})
 
@@ -1447,11 +1337,11 @@ def get_progress(task_id):
     with tasks_lock:
         task = tasks.get(task_id)
     if not task:
-        return jsonify({"error": "Task não encontrada"}), 404
+        return jsonify({"error": "Task nao encontrada"}), 404
     return jsonify({
         "progress": task["progress"],
-        "status": task["status"],
-        "message": task["message"],
+        "status":   task["status"],
+        "message":  task["message"],
     })
 
 
@@ -1459,83 +1349,81 @@ def get_progress(task_id):
 def download_file(task_id):
     with tasks_lock:
         task = tasks.get(task_id)
-
     if not task:
-        return jsonify({"error": "Task não encontrada"}), 404
+        return jsonify({"error": "Task nao encontrada"}), 404
     if task["status"] != "done":
-        return jsonify({"error": "Arquivo ainda não está pronto"}), 202
+        return jsonify({"error": "Arquivo ainda nao esta pronto"}), 202
     if not task["result_path"] or not os.path.exists(task["result_path"]):
-        return jsonify({"error": "Arquivo de resultado não encontrado"}), 500
+        return jsonify({"error": "Arquivo de resultado nao encontrado"}), 500
 
     result_path = task["result_path"]
-    temp_dir = task["temp_dir"]
-    filename = os.path.basename(result_path)
+    temp_dir    = task["temp_dir"]
+    filename    = os.path.basename(result_path)
 
-    with open(result_path, "rb") as f:
-        data = f.read()
+    with open(result_path, "rb") as fh:
+        data = fh.read()
 
-    # Limpeza assíncrona após download
     def _cleanup():
-        import time
-        time.sleep(10)
+        import time; time.sleep(10)
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
         with tasks_lock:
             tasks.pop(task_id, None)
 
     threading.Thread(target=_cleanup, daemon=True).start()
-
     return send_file(io.BytesIO(data), as_attachment=True, download_name=filename)
 
-
-# ── Worker de background ─────────────────────────────────────────────────────
 
 def _process_in_background(task_id: str, tool: str, saved_paths: list, temp_dir: str):
     try:
         files = [SavedFile(p) for p in saved_paths]
         set_progress(task_id, 8, "Iniciando processamento...")
 
-        if tool == "pdf-to-images":
-            output_files = pdf_to_images(files[0], temp_dir, task_id)
-        elif tool == "images-to-pdf":
-            output_files = images_to_pdf(files, temp_dir, task_id)
-        elif tool == "merge-pdf":
-            output_files = merge_pdfs(files, temp_dir, task_id)
-        elif tool == "split-pdf":
-            output_files = split_pdf(files[0], temp_dir, task_id)
-        elif tool == "compress-pdf":
-            output_files = compress_pdf(files[0], temp_dir, task_id)
-        elif tool == "pdf-to-pdfa":
-            output_files = pdf_to_pdfa(files, temp_dir, task_id)
-        elif tool == "word-to-pdf":
-            output_files = word_to_pdf(files, temp_dir, task_id)
-        elif tool == "excel-to-pdf":
-            output_files = excel_to_pdf(files[0], temp_dir, task_id)
-        elif tool == "txt-to-pdf":
-            output_files = txt_to_pdf(files[0], temp_dir, task_id)
-        elif tool == "pdf-to-word":
-            output_files = pdf_to_word(files[0], temp_dir, task_id)
-        else:
-            raise ValueError(f"Ferramenta não suportada: {tool}")
+        dispatch = {
+            "pdf-to-images": lambda: pdf_to_images(files[0], temp_dir, task_id),
+            "images-to-pdf": lambda: images_to_pdf(files, temp_dir, task_id),
+            "merge-pdf":     lambda: merge_pdfs(files, temp_dir, task_id),
+            "split-pdf":     lambda: split_pdf(files[0], temp_dir, task_id),
+            "compress-pdf":  lambda: compress_pdf(files[0], temp_dir, task_id),
+            "pdf-to-pdfa":   lambda: pdf_to_pdfa(files, temp_dir, task_id),
+            "word-to-pdf":   lambda: word_to_pdf(files, temp_dir, task_id),
+            "excel-to-pdf":  lambda: excel_to_pdf(files[0], temp_dir, task_id),
+            "txt-to-pdf":    lambda: txt_to_pdf(files[0], temp_dir, task_id),
+            "pdf-to-word":   lambda: pdf_to_word(files[0], temp_dir, task_id),
+        }
 
+        if tool not in dispatch:
+            raise ValueError(f"Ferramenta nao suportada: {tool}")
+
+        output_files = dispatch[tool]()
         set_progress(task_id, 95, "Preparando arquivo para download...")
-        result_path = build_response_file(output_files, temp_dir)
+        result_path = _build_result(output_files, temp_dir)
 
         with tasks_lock:
-            tasks[task_id]["progress"] = 100
-            tasks[task_id]["status"] = "done"
-            tasks[task_id]["message"] = "✅ Concluído com sucesso!"
+            tasks[task_id]["progress"]    = 100
+            tasks[task_id]["status"]      = "done"
+            tasks[task_id]["message"]     = "Concluido com sucesso!"
             tasks[task_id]["result_path"] = result_path
 
     except Exception as exc:
         with tasks_lock:
             if task_id in tasks:
-                tasks[task_id]["status"] = "error"
-                tasks[task_id]["message"] = str(exc)
+                tasks[task_id]["status"]   = "error"
+                tasks[task_id]["message"]  = str(exc)
                 tasks[task_id]["progress"] = 0
 
 
-# ── Funções de conversão ─────────────────────────────────────────────────────
+def _build_result(output_files, temp_dir):
+    if not isinstance(output_files, list):
+        output_files = [output_files]
+    if len(output_files) == 1:
+        return output_files[0]
+    zip_path = os.path.join(temp_dir, "converted_files.zip")
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        for fp in output_files:
+            zipf.write(fp, os.path.basename(fp))
+    return zip_path
+
 
 def pdf_to_images(file, temp_dir, task_id=None):
     pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
@@ -1546,9 +1434,9 @@ def pdf_to_images(file, temp_dir, task_id=None):
     for page_num in range(total):
         if task_id:
             set_progress(task_id, 10 + int(page_num / total * 80),
-                         f"Convertendo página {page_num + 1} de {total}...")
+                         f"Convertendo pagina {page_num + 1} de {total}...")
         page = doc.load_page(page_num)
-        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+        pix  = page.get_pixmap(matrix=fitz.Matrix(2, 2))
         img_path = os.path.join(temp_dir, f"page_{page_num + 1}.png")
         pix.save(img_path)
         output_files.append(img_path)
@@ -1557,7 +1445,7 @@ def pdf_to_images(file, temp_dir, task_id=None):
 
 
 def images_to_pdf(files, temp_dir, task_id=None):
-    total = len(files)
+    total  = len(files)
     images = []
     for i, file in enumerate(files):
         if task_id:
@@ -1577,7 +1465,7 @@ def images_to_pdf(files, temp_dir, task_id=None):
 
 
 def merge_pdfs(files, temp_dir, task_id=None):
-    total = len(files)
+    total      = len(files)
     merged_doc = fitz.open()
     for i, file in enumerate(files):
         if task_id:
@@ -1599,13 +1487,13 @@ def merge_pdfs(files, temp_dir, task_id=None):
 def split_pdf(file, temp_dir, task_id=None):
     pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
     file.save(pdf_path)
-    doc = fitz.open(pdf_path)
+    doc   = fitz.open(pdf_path)
     total = len(doc)
     output_files = []
     for page_num in range(total):
         if task_id:
             set_progress(task_id, 10 + int(page_num / total * 80),
-                         f"Extraindo página {page_num + 1} de {total}...")
+                         f"Extraindo pagina {page_num + 1} de {total}...")
         new_doc = fitz.open()
         new_doc.insert_pdf(doc, from_page=page_num, to_page=page_num)
         output_path = os.path.join(temp_dir, f"page_{page_num + 1}.pdf")
@@ -1617,13 +1505,8 @@ def split_pdf(file, temp_dir, task_id=None):
 
 
 def compress_pdf(file, temp_dir, task_id=None):
-    """
-    Compressão real via Ghostscript:
-      /screen   → 72 dpi  (menor tamanho, qualidade baixa)
-      /ebook    → 150 dpi (bom equilíbrio tamanho × qualidade)  ← padrão
-      /printer  → 300 dpi (alta qualidade)
-    """
-    pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
+    # Ghostscript PDFSETTINGS: /screen=72dpi  /ebook=150dpi  /printer=300dpi
+    pdf_path    = os.path.join(temp_dir, secure_filename(file.filename))
     file.save(pdf_path)
     output_path = os.path.join(temp_dir, "compressed.pdf")
 
@@ -1631,12 +1514,8 @@ def compress_pdf(file, temp_dir, task_id=None):
         set_progress(task_id, 20, "Analisando PDF...")
 
     gs_args = [
-        "gs",
-        "-dBATCH",
-        "-dNOPAUSE",
-        "-dQUIET",
-        "-dSAFER",
-        "-dPDFSETTINGS=/ebook",          # Reduz imagens para 150 dpi
+        "gs", "-dBATCH", "-dNOPAUSE", "-dQUIET", "-dSAFER",
+        "-dPDFSETTINGS=/ebook",
         "-dColorImageResolution=150",
         "-dGrayImageResolution=150",
         "-dMonoImageResolution=150",
@@ -1645,32 +1524,30 @@ def compress_pdf(file, temp_dir, task_id=None):
         f"-sOutputFile={output_path}",
         pdf_path,
     ]
-    gs_args_bytes = [a.encode("utf-8") if isinstance(a, str) else a for a in gs_args]
+    gs_bytes = [a.encode("utf-8") if isinstance(a, str) else a for a in gs_args]
 
     if task_id:
         set_progress(task_id, 40, "Comprimindo imagens com Ghostscript...")
 
     try:
-        ghostscript.Ghostscript(*gs_args_bytes)
+        ghostscript.Ghostscript(*gs_bytes)
     except Exception as e:
         raise RuntimeError(f"Erro ao comprimir PDF: {e}") from e
 
     if task_id:
         set_progress(task_id, 85, "Verificando resultado...")
 
-    # Se o arquivo comprimido for maior, devolve o original
     orig_size = os.path.getsize(pdf_path)
     comp_size = os.path.getsize(output_path)
     if comp_size >= orig_size:
         return [pdf_path]
-
     return [output_path]
 
 
 def pdf_to_pdfa(files, temp_dir, task_id=None):
     if not isinstance(files, list):
         files = [files]
-    total = len(files)
+    total        = len(files)
     output_files = []
     for i, file in enumerate(files):
         if task_id:
@@ -1679,7 +1556,7 @@ def pdf_to_pdfa(files, temp_dir, task_id=None):
         input_path = os.path.join(temp_dir, secure_filename(file.filename))
         file.save(input_path)
         base_name, _ = os.path.splitext(os.path.basename(input_path))
-        output_path = os.path.join(temp_dir, f"{base_name}_pdfa.pdf")
+        output_path  = os.path.join(temp_dir, f"{base_name}_pdfa.pdf")
         gs_args = [
             "gs", "-dPDFA=1", "-dBATCH", "-dNOPAUSE", "-dNOOUTERSAVE",
             "-dUseCIEColor", "-sProcessColorModel=DeviceRGB", "-sDEVICE=pdfwrite",
@@ -1699,15 +1576,15 @@ def pdf_to_pdfa(files, temp_dir, task_id=None):
 def word_to_pdf(files, temp_dir, task_id=None):
     from docx import Document
 
-    pdf_path = os.path.join(temp_dir, "word_to_pdf.pdf")
-    c = canvas.Canvas(pdf_path, pagesize=letter)
-    width, height = letter
-    y_position = height - 50
-
     if not isinstance(files, list):
         files = [files]
 
-    total = len(files)
+    pdf_path      = os.path.join(temp_dir, "word_to_pdf.pdf")
+    c             = canvas.Canvas(pdf_path, pagesize=letter)
+    width, height = letter
+    y_position    = height - 50
+    total         = len(files)
+
     for file_idx, file in enumerate(files):
         if task_id:
             set_progress(task_id, 10 + int(file_idx / total * 80),
@@ -1717,99 +1594,74 @@ def word_to_pdf(files, temp_dir, task_id=None):
         doc = Document(docx_path)
 
         if file_idx > 0:
-            c.showPage()
-            y_position = height - 50
+            c.showPage(); y_position = height - 50
             c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, y_position, "=" * 60)
-            y_position -= 20
-            c.drawString(50, y_position, f"Documento: {file.filename}")
-            y_position -= 20
-            c.drawString(50, y_position, "=" * 60)
-            y_position -= 30
+            c.drawString(50, y_position, "=" * 60); y_position -= 20
+            c.drawString(50, y_position, f"Documento: {file.filename}"); y_position -= 20
+            c.drawString(50, y_position, "=" * 60); y_position -= 30
             c.setFont("Helvetica", 11)
 
         for paragraph in doc.paragraphs:
             if paragraph.text.strip():
-                text = paragraph.text
                 chars_per_line = int((width - 100) / 6)
-                words = text.split()
-                lines, current_line = [], []
+                words, lines, current_line = paragraph.text.split(), [], []
                 for word in words:
                     if len(" ".join(current_line + [word])) <= chars_per_line:
                         current_line.append(word)
                     else:
-                        if current_line:
-                            lines.append(" ".join(current_line))
+                        if current_line: lines.append(" ".join(current_line))
                         current_line = [word]
-                if current_line:
-                    lines.append(" ".join(current_line))
+                if current_line: lines.append(" ".join(current_line))
                 for line in lines:
-                    if y_position < 50:
-                        c.showPage()
-                        y_position = height - 50
-                    c.drawString(50, y_position, line)
-                    y_position -= 20
+                    if y_position < 50: c.showPage(); y_position = height - 50
+                    c.drawString(50, y_position, line); y_position -= 20
 
         for table in doc.tables:
             y_position -= 10
-            if y_position < 100:
-                c.showPage()
-                y_position = height - 50
+            if y_position < 100: c.showPage(); y_position = height - 50
             c.setFont("Helvetica", 9)
             for row in table.rows:
                 row_text = " | ".join(cell.text for cell in row.cells)
-                if len(row_text) > 100:
-                    row_text = row_text[:97] + "..."
-                if y_position < 50:
-                    c.showPage()
-                    y_position = height - 50
-                c.drawString(50, y_position, row_text)
-                y_position -= 15
-            y_position -= 10
-            c.setFont("Helvetica", 11)
+                if len(row_text) > 100: row_text = row_text[:97] + "..."
+                if y_position < 50: c.showPage(); y_position = height - 50
+                c.drawString(50, y_position, row_text); y_position -= 15
+            y_position -= 10; c.setFont("Helvetica", 11)
 
     c.save()
     return [pdf_path]
 
 
 def excel_to_pdf(file, temp_dir, task_id=None):
-    xlsx_path = os.path.join(temp_dir, secure_filename(file.filename))
+    xlsx_path     = os.path.join(temp_dir, secure_filename(file.filename))
     file.save(xlsx_path)
-    pdf_path = os.path.join(temp_dir, "excel_to_pdf.pdf")
-    c = canvas.Canvas(pdf_path, pagesize=letter)
+    pdf_path      = os.path.join(temp_dir, "excel_to_pdf.pdf")
+    c             = canvas.Canvas(pdf_path, pagesize=letter)
     width, height = letter
-    y_position = height - 50
+    y_position    = height - 50
 
-    if task_id:
-        set_progress(task_id, 20, "Lendo planilha...")
+    if task_id: set_progress(task_id, 20, "Lendo planilha...")
 
     try:
-        workbook = openpyxl.load_workbook(xlsx_path)
+        workbook     = openpyxl.load_workbook(xlsx_path)
         total_sheets = len(workbook.sheetnames)
         for sheet_idx, sheet_name in enumerate(workbook.sheetnames):
             if task_id:
                 set_progress(task_id, 20 + int(sheet_idx / total_sheets * 65),
-                             f'Processando aba "{sheet_name}"...')
+                             "Processando aba " + sheet_name + "...")
             sheet = workbook[sheet_name]
             c.setFont("Helvetica", 10)
-            c.drawString(50, y_position, f"--- Planilha: {sheet_name} ---")
-            y_position -= 20
+            c.drawString(50, y_position, f"--- Planilha: {sheet_name} ---"); y_position -= 20
             for row in sheet.iter_rows():
-                row_data = [str(cell.value) if cell.value is not None else "" for cell in row]
+                row_data  = [str(cell.value) if cell.value is not None else "" for cell in row]
                 line_text = " | ".join(row_data)
-                max_line_width = int((width - 100) / 6)
-                if len(line_text) > max_line_width:
-                    line_text = line_text[:max_line_width] + "..."
+                max_chars = int((width - 100) / 6)
+                if len(line_text) > max_chars: line_text = line_text[:max_chars] + "..."
                 if y_position < 50:
-                    c.showPage()
-                    y_position = height - 50
-                    c.setFont("Helvetica", 10)
-                c.drawString(50, y_position, line_text)
-                y_position -= 15
+                    c.showPage(); y_position = height - 50; c.setFont("Helvetica", 10)
+                c.drawString(50, y_position, line_text); y_position -= 15
             y_position -= 30
             if y_position < 50 and sheet_name != workbook.sheetnames[-1]:
-                c.showPage()
-                y_position = height - 50
+                c.showPage(); y_position = height - 50
     except Exception as e:
         c.drawString(50, y_position - 20, f"Erro ao ler planilha: {e}")
 
@@ -1818,86 +1670,65 @@ def excel_to_pdf(file, temp_dir, task_id=None):
 
 
 def txt_to_pdf(file, temp_dir, task_id=None):
-    txt_path = os.path.join(temp_dir, secure_filename(file.filename))
+    txt_path      = os.path.join(temp_dir, secure_filename(file.filename))
     file.save(txt_path)
-    pdf_path = os.path.join(temp_dir, "text_to_pdf.pdf")
-    c = canvas.Canvas(pdf_path, pagesize=letter)
+    pdf_path      = os.path.join(temp_dir, "text_to_pdf.pdf")
+    c             = canvas.Canvas(pdf_path, pagesize=letter)
     width, height = letter
-    y_position = height - 50
+    y_position    = height - 50
     c.setFont("Helvetica", 12)
 
-    if task_id:
-        set_progress(task_id, 20, "Lendo arquivo de texto...")
+    if task_id: set_progress(task_id, 20, "Lendo arquivo de texto...")
 
     try:
-        with open(txt_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+        with open(txt_path, "r", encoding="utf-8") as fh:
+            lines = fh.readlines()
         total = len(lines)
         for i, line in enumerate(lines):
             if task_id and i % 50 == 0:
                 set_progress(task_id, 20 + int(i / max(total, 1) * 70),
                              f"Processando linha {i + 1} de {total}...")
-            text_line = line.strip()
+            text_line      = line.strip()
             chars_per_line = int((width - 100) / 7)
-            chunks = [text_line[j:j + chars_per_line]
-                      for j in range(0, max(len(text_line), 1), chars_per_line)] if text_line else [""]
+            chunks = (
+                [text_line[j:j + chars_per_line] for j in range(0, len(text_line), chars_per_line)]
+                if text_line else [""]
+            )
             for chunk in chunks:
                 if y_position < 50:
-                    c.showPage()
-                    y_position = height - 50
-                    c.setFont("Helvetica", 12)
-                c.drawString(50, y_position, chunk)
-                y_position -= 15
+                    c.showPage(); y_position = height - 50; c.setFont("Helvetica", 12)
+                c.drawString(50, y_position, chunk); y_position -= 15
     except Exception as e:
-        c.drawString(50, y_position - 20, f"Erro ao ler arquivo de texto: {e}")
+        c.drawString(50, y_position - 20, f"Erro ao ler arquivo: {e}")
 
     c.save()
     return [pdf_path]
 
 
 def pdf_to_word(file, temp_dir, task_id=None):
-    pdf_path = os.path.join(temp_dir, secure_filename(file.filename))
+    pdf_path      = os.path.join(temp_dir, secure_filename(file.filename))
     file.save(pdf_path)
     docx_filename = os.path.splitext(secure_filename(file.filename))[0] + ".docx"
-    docx_path = os.path.join(temp_dir, docx_filename)
+    docx_path     = os.path.join(temp_dir, docx_filename)
 
-    if task_id:
-        set_progress(task_id, 20, "Analisando PDF...")
+    if task_id: set_progress(task_id, 20, "Analisando PDF...")
 
     cv = None
     try:
         cv = Converter(pdf_path)
-        if task_id:
-            set_progress(task_id, 40, "Convertendo para Word (pode demorar)...")
+        if task_id: set_progress(task_id, 40, "Convertendo para Word (pode demorar)...")
         cv.convert(docx_path)
-        if task_id:
-            set_progress(task_id, 85, "Finalizando...")
+        if task_id: set_progress(task_id, 85, "Finalizando...")
     except ValueError as e:
         raise RuntimeError(f"Erro no arquivo PDF: {e}") from e
     except ConversionException as e:
-        raise RuntimeError(f"Erro interno na conversão: {e}") from e
+        raise RuntimeError(f"Erro interno na conversao: {e}") from e
     except Exception as e:
         raise RuntimeError(f"Erro ao converter {file.filename} para Word: {e}") from e
     finally:
-        if cv:
-            cv.close()
+        if cv: cv.close()
 
     return [docx_path]
-
-
-def build_response_file(output_files, temp_dir):
-    """Cria o arquivo final (único ou ZIP) e retorna o caminho."""
-    if not isinstance(output_files, list):
-        output_files = [output_files]
-
-    if len(output_files) == 1:
-        return output_files[0]
-
-    zip_path = os.path.join(temp_dir, "converted_files.zip")
-    with zipfile.ZipFile(zip_path, "w") as zipf:
-        for file_path in output_files:
-            zipf.write(file_path, os.path.basename(file_path))
-    return zip_path
 
 
 if __name__ == "__main__":
